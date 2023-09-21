@@ -1,0 +1,10 @@
+certifi==2023.7.22
+charset-normalizer==3.2.0
+gevent==23.9.1
+greenlet==3.0.0rc3
+grequests==0.7.0
+idna==3.4
+requests==2.31.0
+urllib3==2.0.5
+zope.event==5.0
+zope.interface==6.0
