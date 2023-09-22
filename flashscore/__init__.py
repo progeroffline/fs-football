@@ -1,1 +1,1 @@
-from .base import FlashscoreApi
+from .api import FlashscoreApi
