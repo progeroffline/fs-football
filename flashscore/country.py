@@ -18,11 +18,11 @@ class Country(Base):
         self._league_url = 'https://www.flashscore.com/x/req/m_1_'
 
     def __repr__(self) -> str:
-        return "%s(id=%s, name='%s', leagues=%s)" % (
+        return "%s(id=%s, name='%s', url='%s')" % (
             self.__class__.__name__,
             self.id,
             self.name,
-            self.leagues
+            self.url,
         )
 
     def get_leagues(self): 
@@ -33,7 +33,8 @@ class Country(Base):
             League(
                 id=league['MTI'],
                 name=league['MN'],
-                url=f"{self.main_url}{league['MU']}",
+                url=f"{self.url}{league['MU']}/",
+                country_id=self.id,
                 api_endpoint=league['MT'],
             )  
             for league in flashscore_api_json

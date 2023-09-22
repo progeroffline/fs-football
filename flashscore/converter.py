@@ -1,4 +1,3 @@
-
 def gzip_to_json(gzip: str):
     items = gzip.split('~')
     
@@ -10,8 +9,11 @@ def gzip_to_json(gzip: str):
         
         for param in item_params:
             if param in ['', ' ']: continue
-
-            key, value = param.split('÷')
+            
+            try:
+                key, value = param.split('÷')
+            except Exception:
+                key, value = param.split('·')
             item_data[key] = value
         
         json_result.append(item_data)

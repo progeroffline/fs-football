@@ -1,3 +1,6 @@
+from typing import List
+
+import grequests
 import requests
 
 
@@ -21,3 +24,9 @@ class Base:
     
     def make_request(self, url: str) -> requests.Response:
         return requests.get(url, headers=self.headers) 
+
+    def make_grequest(self, urls: List[str]) -> List[requests.models.Response]:
+        return grequests.map([
+            grequests.get(url, headers=self.headers)
+            for url in urls
+        ]) 
