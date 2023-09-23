@@ -1,5 +1,7 @@
+from typing import Dict, List
 
-def gzip_to_json(gzip: str):
+
+def gzip_to_json(gzip: str) -> List[Dict]:
     items = gzip.split('~')
     
     json_result = []
@@ -10,8 +12,11 @@ def gzip_to_json(gzip: str):
         
         for param in item_params:
             if param in ['', ' ']: continue
-
-            key, value = param.split('÷')
+            
+            try:
+                key, value = param.split('÷')
+            except Exception:
+                key, value = param.split('·')
             item_data[key] = value
         
         json_result.append(item_data)
