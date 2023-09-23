@@ -6,15 +6,25 @@ from .match import Match
 
 
 class Season(Base):
-    def __init__(self, id: int, title: str, country_id: int, league_id: str):
+    def __init__(self,
+                 id: int,
+                 title: str,
+                 country_id: int,
+                 league_id: str,
+                 country_name: str,
+                 league_name: str):
         super().__init__()
         
         self.id = id
         self.title = title
         self.country_id = country_id
         self.league_id = league_id
+        self.country_name = country_name
+        self.league_name = league_name
+        
         self._matches_url = 'https://local-global.flashscore.ninja/2/x/feed/'
         self._matches_url += f'tr_1_{self.country_id}_{self.league_id}_{self.id}_0_3_en_1'
+        
     def __repr__(self) -> str:
         return "%s(id='%s', title='%s')" % (
             self.__class__.__name__,
@@ -40,4 +50,11 @@ class Season(Base):
 
     def get_matches(self) -> List[Match]:
         matches_ids = self.get_matches_ids()
-        print(matches_ids)
+        return [
+            Match(
+                id=match_id,
+                country_name=self.country_name,
+                league_name=self.league_name,
+            )
+            for match_id in matches_ids
+        ]

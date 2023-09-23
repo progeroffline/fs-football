@@ -6,6 +6,7 @@ import requests
 
 class Base:
     def __init__(self):
+        self.private_vars = ['private_vars', 'headers', 'main_url']
         self.main_url = 'https://flashscore.com/'
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',

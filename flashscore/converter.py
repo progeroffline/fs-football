@@ -1,4 +1,7 @@
-def gzip_to_json(gzip: str):
+from typing import Dict, List
+
+
+def gzip_to_json(gzip: str) -> List[Dict]:
     items = gzip.split('~')
     
     json_result = []

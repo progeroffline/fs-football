@@ -36,6 +36,7 @@ class Country(Base):
                 url=f"{self.url}{league['MU']}/",
                 country_id=self.id,
                 api_endpoint=league['MT'],
+                country_name=self.name,
             )  
             for league in flashscore_api_json
             if 'MN' in league.keys()

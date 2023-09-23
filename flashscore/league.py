@@ -3,13 +3,20 @@ from .season import Season
 
 
 class League(Base):
-    def __init__(self, id: str, name: str, url: str, country_id: int, api_endpoint: str):
+    def __init__(self,
+                 id: str,
+                 name: str,
+                 url: str,
+                 country_id: int,
+                 country_name: str,
+                 api_endpoint: str):
         super().__init__()
         
         self.id = id
         self.name = name
         self.url = url
         self.country_id = country_id
+        self.country_name = country_name
         self.api_endpoint = api_endpoint
         
     def __repr__(self) -> str:
@@ -44,6 +51,8 @@ class League(Base):
                 title=title,
                 country_id=self.country_id,
                 league_id=self.id,
+                country_name=self.country_name,
+                league_name=self.name,
             )
             for id, title in zip(seasons_ids, seasons_titles)
         ]
