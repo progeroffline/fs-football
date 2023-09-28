@@ -1,9 +1,18 @@
 import json
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Union
 
 from flashscore import converter
 
 from .base import Base
+
+
+@dataclass()
+class StatValue:
+    name: str
+    home: Union[str, int, float]
+    away: Union[str, int, float]
 
 
 class Match(Base):
@@ -18,6 +27,7 @@ class Match(Base):
         self.tournament = self.home_team_name = self.away_team_name = None
         self.home_team_name = self.away_team_score = self.timestamp = None
         self.final_total_score = None
+        self.stats_match = self.stats_first_half = self.stats_second_half = None
         
         # self._load_content()
 
@@ -32,15 +42,17 @@ class Match(Base):
         )
 
     def load_content(self) -> None:
-        names, general, events, odds = self.make_grequest([
+        names, general, stats, events, odds = self.make_grequest([
             self.flashscore_url,
             f'https://local-global.flashscore.ninja/2/x/feed/dc_1_{self.id}',
+            f'https://local-global.flashscore.ninja/2/x/feed/df_st_1_{self.id}',
             f'https://local-global.flashscore.ninja/2/x/feed/df_sui_1_{self.id}',
             f'https://2.ds.lsapp.eu/pq_graphql?_hash=ope&eventId={self.id}&projectId=2&geoIpCode=UA&geoIpSubdivisionCode=UA46',
         ])
 
         self._load_names_content(names.text)
         self._load_general_content(general.text)
+        self._load_stats_content(stats.text)
         
     def _load_names_content(self, names_content: str) -> None:
         index_start = names_content.find('window.environment = {') + len('window.environment =')
@@ -64,3 +76,30 @@ class Match(Base):
         self.home_team_score = general_json['DE']
         self.away_team_score = general_json['DF']
         self.final_total_score = f"%s:%s" % (self.home_team_score, self.away_team_score)
+
+    def _load_stats_content(self, stats_content: str) -> None:
+        stats_match = []
+        stats_first_half = []
+        stats_second_half = []
+        
+        # Convert response data to format normal for usage
+        stats_json = converter.gzip_to_json(stats_content) 
+        
+        # Remove {"A1":""} it not used element
+        stats_json = stats_json[:len(stats_json)-1]
+        
+        current_section = 'Match'
+        for data in stats_json:
+            current_section = data.get('SE') if data.get('SE') is not None else current_section
+            if data.get('SE') is not None: continue
+            
+            if current_section == 'Match':
+                stats_match.append(data)
+            elif current_section == '1st Half':
+                stats_first_half.append(data)
+            elif current_section == '2nd Half':
+                stats_second_half.append(data)
+
+        self.stats_match = [StatValue(stat['SG'], stat['SH'], stat['SI']) for stat in stats_match]
+        self.stats_first_half = [StatValue(stat['SG'], stat['SH'], stat['SI']) for stat in stats_first_half]
+        self.stats_second_half = [StatValue(stat['SG'], stat['SH'], stat['SI']) for stat in stats_second_half]
