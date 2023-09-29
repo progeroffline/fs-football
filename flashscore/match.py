@@ -14,6 +14,12 @@ class StatValue:
     home: Union[str, int, float]
     away: Union[str, int, float]
 
+    
+@dataclass()
+class Odds:
+    team: str
+    value: float
+
 
 class Match(Base):
     def __init__(self, id: str, country_name: str, league_name: str):
@@ -28,6 +34,7 @@ class Match(Base):
         self.home_team_name = self.away_team_score = self.timestamp = None
         self.final_total_score = None
         self.stats_match = self.stats_first_half = self.stats_second_half = None
+        self.prematch_home_odds = self.prematch_middle_odds = self.prematch_away_odds = None
         
         # self._load_content()
 
@@ -53,6 +60,8 @@ class Match(Base):
         self._load_names_content(names.text)
         self._load_general_content(general.text)
         self._load_stats_content(stats.text)
+        self._load_events_content(events.text)
+        self._load_odds_content(odds.text)
         
     def _load_names_content(self, names_content: str) -> None:
         index_start = names_content.find('window.environment = {') + len('window.environment =')
@@ -103,3 +112,16 @@ class Match(Base):
         self.stats_match = [StatValue(stat['SG'], stat['SH'], stat['SI']) for stat in stats_match]
         self.stats_first_half = [StatValue(stat['SG'], stat['SH'], stat['SI']) for stat in stats_first_half]
         self.stats_second_half = [StatValue(stat['SG'], stat['SH'], stat['SI']) for stat in stats_second_half]
+
+    def _load_events_content(self, events_content: str) -> None:
+        pass
+        
+    def _load_odds_content(self, odds_content: str) -> None:
+        odds_json = json.loads(odds_content)
+        middle, away, home = odds_json['data']['findPrematchOddsById']['odds'][0]['odds']
+
+        self.prematch_home_odds = Odds('home', float(home['value']))
+        self.prematch_away_odds = Odds('away', float(away['value']))
+        self.prematch_middle_odds = Odds('middle', float(middle['value']))
+
+        
