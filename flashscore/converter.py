@@ -17,7 +17,11 @@ def gzip_to_json(gzip: str) -> List[Dict]:
                 key, value = param.split('÷')
             except Exception:
                 key, value = param.split('·')
-            item_data[key] = value
+            
+            if item_data.get(key) is None:
+                item_data[key] = value
+            else:
+                item_data[f'{key}_2'] = value
         
         json_result.append(item_data)
     return json_result
