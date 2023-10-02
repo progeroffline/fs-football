@@ -6,9 +6,8 @@ import requests
 
 class Base:
     def __init__(self):
-        self.private_vars = ['private_vars', 'headers', 'main_url']
-        self.main_url = 'https://flashscore.com/'
-        self.headers = {
+        self._main_url = 'https://flashscore.com/'
+        self._headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',
             'Accept': '*/*',
             'Accept-Language': 'en',
@@ -24,10 +23,10 @@ class Base:
         }
     
     def make_request(self, url: str) -> requests.Response:
-        return requests.get(url, headers=self.headers) 
+        return requests.get(url, headers=self._headers) 
 
     def make_grequest(self, urls: List[str]) -> List[requests.models.Response]:
         return grequests.map([
-            grequests.get(url, headers=self.headers)
+            grequests.get(url, headers=self._headers)
             for url in urls
         ]) 

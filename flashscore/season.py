@@ -58,3 +58,24 @@ class Season(Base):
             )
             for match_id in matches_ids
         ]
+
+    def get_matches_with_alreday_loaded_content(self) -> List[Match]:
+        def split_to_chinks(lst, chunk_size):
+            for i in range(0, len(lst), chunk_size):
+                yield lst[i:i + chunk_size]
+                
+        matches = self.get_matches()
+        urls = []
+        for match in matches:
+            urls+= [
+                match._flashscore_url, 
+                match._general_url,
+                match._stats_url,
+                match._events_url,
+                match._odds_url,
+                match._head2heads_url,
+            ]
+        
+        for match, responses in zip(matches, split_to_chinks(self.make_grequest(urls), 6)):
+            match.load_content(*responses) 
+        return matches    

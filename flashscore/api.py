@@ -14,7 +14,7 @@ class FlashscoreApi(Base):
         self._today_matches_url = 'https://local-global.flashscore.ninja/2/x/feed/f_1_0_3_en_1'
     
     def get_countries(self) -> List[Country]:
-        response = self.make_request(self.main_url)
+        response = self.make_request(self._main_url)
         flashscore_html = response.text         
         raw_data_start = flashscore_html.find('rawData: ') + len('rawData: ')
         raw_data_end = raw_data_start + flashscore_html[raw_data_start:].find('\n') - 1
@@ -26,7 +26,7 @@ class FlashscoreApi(Base):
                 countries.append(Country(
                     id=country['MC'],
                     name=country['MCN'],
-                    url=f"{self.main_url}{country['ML'][1:]}",
+                    url=f"{self._main_url}{country['ML'][1:]}",
                 ))
                 
         return sorted(countries, key=lambda country: country.id)
