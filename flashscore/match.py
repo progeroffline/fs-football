@@ -2,7 +2,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from time import time
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from requests import Response
 
@@ -16,12 +16,6 @@ class StatValue:
     name: str
     home: Union[str, int, float]
     away: Union[str, int, float]
-
-    
-@dataclass()
-class Odds:
-    team: str
-    value: float
 
     
 @dataclass()
@@ -80,9 +74,9 @@ class Match(Base):
         self.stats_first_half: List[StatValue] = []
         self.stats_second_half: List[StatValue] = []
         
-        self.prematch_home_odds: Optional[Odds] = None
-        self.prematch_middle_odds: Optional[Odds] = None
-        self.prematch_away_odds: Optional[Odds] = None
+        self.prematch_home_odds: Optional[float] = None
+        self.prematch_middle_odds: Optional[float] = None
+        self.prematch_away_odds: Optional[float] = None
         
         self.events: List[Event] = [] 
         
@@ -116,39 +110,6 @@ class Match(Base):
             self._odds_url,
             self._head2heads_url,
         ])
-
-    def load_content(self,
-                     names: Optional[Union[str, None]] = None,
-                     general: Optional[Union[str, None]] = None,
-                     stats: Optional[Union[str, None]] = None,
-                     events: Optional[Union[str, None]] = None,
-                     odds: Optional[Union[str, None]] = None,
-                     head2heads: Optional[Union[str, None]] = None) -> None:
-        # First check for None value
-        if None in [names, general, stats, events, odds, head2heads]:
-            names, general, stats,\
-            events, odds, head2heads = self._make_requests_to_get_all_match_info() 
-        
-        # Second check for None value
-        if None in [names, general, stats, events, odds, head2heads]:
-            names, general, stats,\
-            events, odds, head2heads = self._make_requests_to_get_all_match_info()
-        
-        # Third check for None value
-        if names is None or\
-            general is None or\
-            stats is None or\
-            events is None or\
-            odds is None or\
-            head2heads is None:
-            return 
-            
-        self._load_names_content(names)
-        self._load_general_content(general)
-        self._load_stats_content(stats)
-        self._load_events_content(events)
-        self._load_odds_content(odds)
-        self._load_head2heads_content(head2heads)
         
     def _load_names_content(self, names_content: str) -> None:
         index_start = names_content.find('window.environment = {') + len('window.environment =')
@@ -256,15 +217,15 @@ class Match(Base):
         odds_json = json.loads(odds_content)
         odds = odds_json['data']['findPrematchOddsById']['odds'][0]['odds']
         if len(odds) == 0:
-            self.prematch_home_odds = Odds('home', 0.0)
-            self.prematch_away_odds = Odds('away', 0.0)
-            self.prematch_middle_odds = Odds('middle', 0.0)
+            self.prematch_home_odds = 0.0
+            self.prematch_away_odds = 0.0
+            self.prematch_middle_odds = 0.0
             return 
 
         middle, away, home = odds_json['data']['findPrematchOddsById']['odds'][0]['odds']
-        self.prematch_home_odds = Odds('home', float(home['value']))
-        self.prematch_away_odds = Odds('away', float(away['value']))
-        self.prematch_middle_odds = Odds('middle', float(middle['value']))
+        self.prematch_home_odds = float(home['value'])
+        self.prematch_away_odds = float(away['value'])
+        self.prematch_middle_odds = float(middle['value'])
 
     def _load_head2heads_content(self, head2heads: str) -> None:
         matches_json = converter.gzip_to_json(head2heads) 
@@ -294,3 +255,143 @@ class Match(Base):
                 main_team=match.get('KS'),
                 result_for_main_team=results_codes.get(match.get('KN')),
             ))
+            
+    def load_content(self,
+                     names: Optional[Union[str, None]] = None,
+                     general: Optional[Union[str, None]] = None,
+                     stats: Optional[Union[str, None]] = None,
+                     events: Optional[Union[str, None]] = None,
+                     odds: Optional[Union[str, None]] = None,
+                     head2heads: Optional[Union[str, None]] = None) -> None:
+        # First check for None value
+        if None in [names, general, stats, events, odds, head2heads]:
+            names, general, stats,\
+            events, odds, head2heads = self._make_requests_to_get_all_match_info() 
+        
+        # Second check for None value
+        if None in [names, general, stats, events, odds, head2heads]:
+            names, general, stats,\
+            events, odds, head2heads = self._make_requests_to_get_all_match_info()
+        
+        # Third check for None value
+        if names is None or\
+            general is None or\
+            stats is None or\
+            events is None or\
+            odds is None or\
+            head2heads is None:
+            return 
+            
+        self._load_names_content(names)
+        self._load_general_content(general)
+        self._load_stats_content(stats)
+        self._load_events_content(events)
+        self._load_odds_content(odds)
+        self._load_head2heads_content(head2heads)
+     
+    def get_json(self) -> Dict[str, Any]:
+        return {
+            'id': self.id,
+            'timestamp': self.timestamp,
+            'date': str(self.date),
+            'country_name': self.country_name,
+            'league_name': self.league_name,
+            'tournament': self.tournament,
+            'home_team_name': self.home_team_name,
+            'away_team_name': self.away_team_name,
+            'home_team_name': self.home_team_score,
+            'away_team_score': self.away_team_score,
+            'final_total_score': self.final_total_score,
+            'status': self.status,
+            'stats_match': [
+                {
+                    'name': stats.name,
+                    'home': stats.home,
+                    'away': stats.away,
+                }
+                for stats in self.stats_match
+            ],
+            'stats_first_half': [
+                {
+                    'name': stats.name,
+                    'home': stats.home,
+                    'away': stats.away,
+                }
+                for stats in self.stats_first_half
+            ],
+            'stats_second_half': [
+                {
+                    'name': stats.name,
+                    'home': stats.home,
+                    'away': stats.away,
+                }
+                for stats in self.stats_second_half
+            ],
+            'prematch_home_odds': self.prematch_home_odds,
+            'prematch_middle_odds': self.prematch_middle_odds,
+            'prematch_away_odds': self.prematch_away_odds,
+            'events': [
+                {
+                    'type': event.type,
+                    'player_name': event.player_name,
+                    'player_url': event.player_url,
+                    'time': event.time,
+                    'current_score': event.current_score,
+                    'second_player_name': event.second_player_name,
+                    'second_player_url': event.second_player_url,
+                    'description': event.description,
+                } 
+                for event in self.events
+            ],
+            'home_matches': [
+                {
+                    'id': match.id,
+                    'timestamp': match.timestamp,
+                    'date': str(match.date),
+                    'home_team_name': match.home_team_name,
+                    'home_team_score': match.home_team_score,
+                    'away_team_name': match.away_team_name,
+                    'away_team_score': match.away_team_score,
+                    'league_name': match.league_name,
+                    'country': match.country,
+                    'final_total_score': match.final_total_score,
+                    'main_team': match.main_team,
+                    'result_for_main_team': match.result_for_main_team,
+                }
+                for match in self.home_matches
+            ],
+            'away_matches': [
+                {
+                    'id': match.id,
+                    'timestamp': match.timestamp,
+                    'date': str(match.date),
+                    'home_team_name': match.home_team_name,
+                    'home_team_score': match.home_team_score,
+                    'away_team_name': match.away_team_name,
+                    'away_team_score': match.away_team_score,
+                    'league_name': match.league_name,
+                    'country': match.country,
+                    'final_total_score': match.final_total_score,
+                    'main_team': match.main_team,
+                    'result_for_main_team': match.result_for_main_team,
+                }
+                for match in self.away_matches
+            ],
+            'head2heads_matches': [
+                {
+                    'id': match.id,
+                    'timestamp': match.timestamp,
+                    'date': str(match.date),
+                    'home_team_name': match.home_team_name,
+                    'home_team_score': match.home_team_score,
+                    'away_team_name': match.away_team_name,
+                    'away_team_score': match.away_team_score,
+                    'league_name': match.league_name,
+                    'country': match.country,
+                    'final_total_score': match.final_total_score,
+                    'main_team': match.main_team,
+                    'result_for_main_team': match.result_for_main_team,
+                }
+                for match in self.head2head_matches
+            ]
+        }
