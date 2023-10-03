@@ -27,9 +27,9 @@ class Odds:
 @dataclass()
 class Event:
     type: str
-    time: str
     player_name: str 
     player_url: str
+    time: Optional[str] = None
     current_score: Optional[str] = None
     second_player_name: Optional[str] = None
     second_player_url: Optional[str] = None
@@ -54,14 +54,17 @@ class HistoryMatch:
     
     
 class Match(Base):
-    def __init__(self, id: str, country_name: str, league_name: str):
+    def __init__(self,
+                 id: str,
+                 country_name: Optional[str] = None,
+                 league_name: Optional[str] = None):
         super().__init__()
         
         self.id = id
         self.timestamp: Optional[int] = None
         self.date: Optional[datetime] = None
-        self.country_name: str = country_name
-        self.league_name: str = league_name
+        self.country_name: Optional[str] = country_name
+        self.league_name: Optional[str] = league_name
         self.tournament: Optional[str] = None
         
         self.home_team_name: Optional[str] = None
@@ -100,12 +103,12 @@ class Match(Base):
             ', '.join([
                 f"{key}='{value}'" if isinstance(value, (str, datetime)) else f"{key}={value}"
                 for key, value in vars(self).items()
-                if key[0] != '_'
+                if key[0] != '_' and value is not None and value != []
             ])
         )
 
-    def _make_requests_to_get_all_match_info(self) -> List[Response]:
-        return self.make_grequest([
+    def _make_requests_to_get_all_match_info(self) -> List[str]:
+        return self.make_async_requests([
             self._flashscore_url, 
             self._general_url,
             self._stats_url,
@@ -115,12 +118,12 @@ class Match(Base):
         ])
 
     def load_content(self,
-                     names: Optional[Union[Response, None]] = None,
-                     general: Optional[Union[Response, None]] = None,
-                     stats: Optional[Union[Response, None]] = None,
-                     events: Optional[Union[Response, None]] = None,
-                     odds: Optional[Union[Response, None]] = None,
-                     head2heads: Optional[Union[Response, None]] = None) -> None:
+                     names: Optional[Union[str, None]] = None,
+                     general: Optional[Union[str, None]] = None,
+                     stats: Optional[Union[str, None]] = None,
+                     events: Optional[Union[str, None]] = None,
+                     odds: Optional[Union[str, None]] = None,
+                     head2heads: Optional[Union[str, None]] = None) -> None:
         # First check for None value
         if None in [names, general, stats, events, odds, head2heads]:
             names, general, stats,\
@@ -128,7 +131,6 @@ class Match(Base):
         
         # Second check for None value
         if None in [names, general, stats, events, odds, head2heads]:
-            time.sleep(1)
             names, general, stats,\
             events, odds, head2heads = self._make_requests_to_get_all_match_info()
         
@@ -141,12 +143,12 @@ class Match(Base):
             head2heads is None:
             return 
             
-        self._load_names_content(names.text)
-        self._load_general_content(general.text)
-        self._load_stats_content(stats.text)
-        self._load_events_content(events.text)
-        self._load_odds_content(odds.text)
-        self._load_head2heads_content(head2heads.text)
+        self._load_names_content(names)
+        self._load_general_content(general)
+        self._load_stats_content(stats)
+        self._load_events_content(events)
+        self._load_odds_content(odds)
+        self._load_head2heads_content(head2heads)
         
     def _load_names_content(self, names_content: str) -> None:
         index_start = names_content.find('window.environment = {') + len('window.environment =')
@@ -159,6 +161,10 @@ class Match(Base):
         }
         
         self.tournament = json_data['header']['tournament']['tournament']
+        if self.league_name is None: self.league_name = '%s' % self.tournament
+        if self.country_name is None:
+            self.country_name = json_data['header']['tournament']['category']
+            
         self.home_team_name = json_data['home']['name']
         self.away_team_name = json_data['away']['name']
 
@@ -202,21 +208,36 @@ class Match(Base):
         events_json = converter.gzip_to_json(events_content)
         for event in events_json:
             if event.get('III') is None: continue
+            if event['IF'] == '' \
+                and event['IU'] == '' \
+                and event.get('INX') is None \
+                and event.get('IOX') is None \
+                and event['IK'] == 'Goal':
+                    event['IK'] = 'Penaltie'
             
             if event['IK'] == 'Goal':
                 self.events.append(Event(
                     type=event['IK'],
-                    time=event['IB'],
+                    time=event.get('IB'),
                     player_name=event['IF'],
                     player_url=event['IU'],
                     second_player_name=event.get('IF_2'),
                     second_player_url=event.get('IU_2'),
                     current_score=f"{event['INX']}:{event['IOX']}",
                 ))
+            elif event['IK'] == 'Penaltie':
+                self.events.append(Event(
+                    type=event['IK'],
+                    time=event.get('IB'),
+                    player_name=event['IF'],
+                    player_url=event['IU'],
+                    second_player_name=event.get('IF_2'),
+                    second_player_url=event.get('IU_2'),
+                ))
             elif event['IK'] in ['Substitution - in', 'Substitution - Out']:
                 self.events.append(Event(
                     type=event['IK'],
-                    time=event['IB'],
+                    time=event.get('IB'),
                     player_name=event['IF'],
                     player_url=event['IU'],
                     second_player_name=event.get('IF_2'),
@@ -225,7 +246,7 @@ class Match(Base):
             elif event['IK'] == 'Yellow Card':
                 self.events.append(Event(
                     type=event['IK'],
-                    time=event['IB'],
+                    time=event.get('IB'),
                     player_name=event['IF'],
                     player_url=event['IU'],
                     description=event.get('TL'),

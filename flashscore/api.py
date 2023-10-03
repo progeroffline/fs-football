@@ -1,8 +1,10 @@
 import json
 from typing import List
 
+from . import converter
 from .base import Base
 from .country import Country
+from .match import Match
 
 
 class FlashscoreApi(Base):
@@ -30,3 +32,12 @@ class FlashscoreApi(Base):
                 ))
                 
         return sorted(countries, key=lambda country: country.id)
+
+    def get_today_matches(self) -> List[Match]:
+        today_matches_gzip = self.make_request(self._today_matches_url)
+        today_matches_json = converter.gzip_to_json(today_matches_gzip.text)
+        return [
+            Match(id=today_match['AA'])
+            for today_match in today_matches_json
+            if today_match.get('AA') is not None
+        ]

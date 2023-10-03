@@ -1,7 +1,9 @@
+import asyncio
 from typing import List
 
 import grequests
 import requests
+from aiohttp import ClientSession
 
 
 class Base:
@@ -30,3 +32,24 @@ class Base:
             grequests.get(url, headers=self._headers)
             for url in urls
         ]) 
+
+    async def async_requests(self, urls: List[str]) -> List[str]:
+        async def async_request(url: str) -> str:
+            async with ClientSession() as session:
+                async with session.get(url, headers=self._headers) as response:
+                    return await response.text()
+
+        tasks_result = []
+        async with asyncio.TaskGroup() as tg:
+            for url in urls:
+                tasks_result.append(tg.create_task(async_request(url)))
+
+        return [r.result() for r in tasks_result]
+    
+    def make_async_requests(self, urls: List[str]) -> List[str]:
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(self.async_requests(urls))
+    
+    def split_list_to_chinks(self, lst, chunk_size):
+        for i in range(0, len(lst), chunk_size):
+            yield lst[i:i + chunk_size]
