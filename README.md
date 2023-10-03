@@ -83,11 +83,6 @@ Represents a statistical value in a match.
   - `home`: The value for the home team.
   - `away`: The value for the away team.
 
-### Odds
-Represents odds for a team.
-  - `team`: The name of the team.
-  - `value`: The odds value.
-
 ### Event
 Represents an event in a match, such as a goal or a card.
   - `type`: The event type.
