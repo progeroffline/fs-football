@@ -34,7 +34,7 @@ This Python library allows you to easily fetch data about football matches from 
 
 ```shell
 git clone https://github.com/progeroffline/fs-football
-cd fs-football
+cd fs-football/
 python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
