@@ -18,7 +18,7 @@
 ## Languages
 
 - [🇺🇸 English](README.md)
-- [🇺🇦 Ukrainian](README_UA.md)
+- [🇺🇦 Ukrainian](README_ua.md)
 
 ## Overview
 
