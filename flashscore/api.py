@@ -13,7 +13,7 @@ class FlashscoreApi(Base):
         
         self._league_url = 'https://www.flashscore.com/x/req/m_1_'
         self._matches_url = 'https://local-global.flashscore.ninja/2/x/feed/tr_{endpoint}_{season}_{page}_3_en_1'
-        self._today_matches_url = 'https://local-global.flashscore.ninja/2/x/feed/f_1_-1_3_en_1'
+        self._today_matches_url = 'https://local-global.flashscore.ninja/2/x/feed/f_1_0_3_en_1'
     
     def get_countries(self) -> List[Country]:
         response = self.make_request(self._main_url)
