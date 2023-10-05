@@ -86,7 +86,7 @@ class Match(Base):
         self._stats_url: str = f'https://local-global.flashscore.ninja/2/x/feed/df_st_1_{self.id}'
         self._events_url: str = f'https://local-global.flashscore.ninja/2/x/feed/df_sui_1_{self.id}'
         self._odds_url: str = f'https://2.ds.lsapp.eu/pq_graphql?_hash=ope&eventId={self.id}&projectId=2&geoIpCode=UA&geoIpSubdivisionCode=UA46'
-        self._head2heads_url: str = f'https://local-global.flashscore.ninja/2/x/feed/df_hh_1_{self.id}'
+        self._head2heads_url: str = f'https://local-global.flashscore.ninja/2/x/feed/df_hh_0_{self.id}'
 
     def __repr__(self) -> str:
         return "%s(%s)" % (
