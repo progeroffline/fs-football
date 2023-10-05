@@ -1,10 +1,7 @@
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from time import time
 from typing import Any, Dict, List, Optional, Union
-
-from requests import Response
 
 from flashscore import converter
 
@@ -36,12 +33,12 @@ class HistoryMatch:
     timestamp: int
     date: datetime
     home_team_name: str
-    home_team_score: int
     away_team_name: str
-    away_team_score: int
     league_name: str
     country: str
     final_total_score: str
+    home_team_score: Optional[int] = None
+    away_team_score: Optional[int] = None
     main_team: Optional[str] = None
     result_for_main_team: Optional[str] = None
     
@@ -140,8 +137,8 @@ class Match(Base):
         self.timestamp = int(general_json['DC'])
         self.date = datetime.fromtimestamp(self.timestamp)
         self.status = status_codes[general_json['DA']]
-        self.home_team_score = general_json['DE'] if general_json.get('DE') is not None else None
-        self.away_team_score = general_json['DF'] if general_json.get('DF') is not None else None
+        self.home_team_score = int(general_json['DE']) if general_json.get('DE') is not None else None
+        self.away_team_score = int(general_json['DF']) if general_json.get('DF') is not None else None
         if self.home_team_score is None and self.away_team_score is None:
             self.final_total_score = None
         else:
@@ -246,9 +243,9 @@ class Match(Base):
                 timestamp=int(match['KC']),
                 date=datetime.fromtimestamp(int(match['KC'])),
                 home_team_name=match['FH'],
-                home_team_score=match['KU'],
+                home_team_score=int(match['KU']) if match.get('KU') not in [None,''] else None,
                 away_team_name=match['FK'],
-                away_team_score=match['KT'],
+                away_team_score=int(match['KT']) if match.get('KT') not in [None, ''] else None,
                 league_name=match['KF'],
                 country=match['KH'],
                 final_total_score=match['KL'],
