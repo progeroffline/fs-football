@@ -73,5 +73,5 @@ class Season(Base):
             ]
         
         for match, responses in zip(matches, self.split_list_to_chinks(self.make_grequest(urls), 6)):
-            match.load_content(*responses) 
+            match.load_content(*[response.text for response in responses]) 
         return matches    
