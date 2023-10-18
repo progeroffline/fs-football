@@ -1,4 +1,5 @@
 import json
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
@@ -80,13 +81,20 @@ class Match(Base):
         self.home_matches: List[HistoryMatch] = []
         self.away_matches: List[HistoryMatch] = [] 
         self.head2head_matches: List[HistoryMatch] = []
+        
+        self._flashscore_endpoint: str = f"{self._main_url}match/"
+        self._general_endpoint: str = f'https://local-global.flashscore.ninja/2/x/feed/dc_1_'
+        self._stats_endpoint: str = f'https://local-global.flashscore.ninja/2/x/feed/df_st_1_'
+        self._events_endpoint: str = f'https://local-global.flashscore.ninja/2/x/feed/df_sui_1_'
+        self._odds_endpoint: str = f'https://2.ds.lsapp.eu/pq_graphql'
+        self._head2heads_endpoint: str = f'https://local-global.flashscore.ninja/2/x/feed/df_hh_1_'
 
-        self._flashscore_url: str = f"{self._main_url}/match/{self.id}"
-        self._general_url: str = f'https://local-global.flashscore.ninja/2/x/feed/dc_1_{self.id}'
-        self._stats_url: str = f'https://local-global.flashscore.ninja/2/x/feed/df_st_1_{self.id}'
-        self._events_url: str = f'https://local-global.flashscore.ninja/2/x/feed/df_sui_1_{self.id}'
-        self._odds_url: str = f'https://2.ds.lsapp.eu/pq_graphql?_hash=ope&eventId={self.id}&projectId=2&geoIpCode=UA&geoIpSubdivisionCode=UA46'
-        self._head2heads_url: str = f'https://local-global.flashscore.ninja/2/x/feed/df_hh_1_{self.id}'
+        self._flashscore_url: str = f"{self._flashscore_endpoint}{self.id}"
+        self._general_url: str = f'{self._general_endpoint}{self.id}'
+        self._stats_url: str = f'{self._stats_endpoint}{self.id}'
+        self._events_url: str = f'{self._events_endpoint}{self.id}'
+        self._odds_url: str = f'{self._odds_endpoint}?_hash=ope&eventId={self.id}&projectId=2&geoIpCode=UA&geoIpSubdivisionCode=UA46'
+        self._head2heads_url: str = f'{self._head2heads_endpoint}{self.id}'
 
     def __repr__(self) -> str:
         return "%s(%s)" % (
@@ -136,7 +144,17 @@ class Match(Base):
         
         self.timestamp = int(general_json['DC'])
         self.date = datetime.fromtimestamp(self.timestamp)
-        self.status = status_codes[general_json['DA']]
+        
+        if general_json['DA'] == '2':
+            if general_json['DB'] == '38':
+                self.status = 'Half Time'
+            elif general_json['DB']  == '12':
+                self.status = str(int((int(time.time()) - int(general_json['DD'])) / 60))
+            elif general_json['DB'] == '13':
+                self.status = str(int((((int(time.time()) - int(general_json['DD'])) / 60) + 45)))
+        else:
+            self.status = status_codes[general_json['DA']]
+            
         self.home_team_score = int(general_json['DE']) if general_json.get('DE') is not None else None
         self.away_team_score = int(general_json['DF']) if general_json.get('DF') is not None else None
         if self.home_team_score is None and self.away_team_score is None:
@@ -181,7 +199,7 @@ class Match(Base):
                     player_url=event['IU'],
                     second_player_name=event.get('IF_2'),
                     second_player_url=event.get('IU_2'),
-                    current_score=f"{event['INX']}:{event['IOX']}",
+                    current_score=f"{event.get('INX')}:{event.get('IOX')}",
                 ))
             elif event['IK'] == 'Penaltie':
                 self.events.append(Event(
@@ -218,11 +236,23 @@ class Match(Base):
             self.prematch_away_odds = 0.0
             self.prematch_middle_odds = 0.0
             return 
+        
+        odds = odds_json['data']['findPrematchOddsById']['odds'][0]['odds']
+        if len(odds) == 3:
+            middle, away, home = odds_json['data']['findPrematchOddsById']['odds'][0]['odds']
+            middle = middle['value']
+            away = away['value']
+            home = home['value']
+        else:
+            values = {}
+            for data in odds:
+                values[str(data.get('eventParticipantId'))] = data.get('value')
 
-        middle, away, home = odds_json['data']['findPrematchOddsById']['odds'][0]['odds']
-        self.prematch_home_odds = float(home['value'])
-        self.prematch_away_odds = float(away['value'])
-        self.prematch_middle_odds = float(middle['value'])
+            middle, away, home = values.values()
+            
+        self.prematch_home_odds = float(home)
+        self.prematch_away_odds = float(away)
+        self.prematch_middle_odds = float(middle)
 
     def _load_head2heads_content(self, head2heads: str) -> None:
         matches_json = converter.gzip_to_json(head2heads) 
@@ -252,33 +282,23 @@ class Match(Base):
                 main_team=match.get('KS'),
                 result_for_main_team=results_codes.get(match.get('KN')),
             ))
-            
+
     def load_content(self,
-                     names: Optional[Union[str, None]] = None,
-                     general: Optional[Union[str, None]] = None,
-                     stats: Optional[Union[str, None]] = None,
-                     events: Optional[Union[str, None]] = None,
-                     odds: Optional[Union[str, None]] = None,
-                     head2heads: Optional[Union[str, None]] = None) -> None:
-        # First check for None value
-        if None in [names, general, stats, events, odds, head2heads]:
-            names, general, stats,\
-            events, odds, head2heads = self._make_requests_to_get_all_match_info() 
-        
-        # Second check for None value
-        if None in [names, general, stats, events, odds, head2heads]:
-            names, general, stats,\
-            events, odds, head2heads = self._make_requests_to_get_all_match_info()
-        
-        # Third check for None value
-        if names is None or\
-            general is None or\
-            stats is None or\
-            events is None or\
-            odds is None or\
+                     names: Optional[str] = None,
+                     general: Optional[str] = None,
+                     stats: Optional[str] = None,
+                     events: Optional[str] = None,
+                     odds: Optional[str] = None,
+                     head2heads: Optional[str] = None) -> None:
+        if names is None and\
+            general is None and\
+            stats is None and\
+            events is None and\
+            odds is None and\
             head2heads is None:
-            return 
-            
+                names, general, stats,\
+                events, odds, head2heads = self._make_requests_to_get_all_match_info()
+         
         self._load_names_content(names)
         self._load_general_content(general)
         self._load_stats_content(stats)
