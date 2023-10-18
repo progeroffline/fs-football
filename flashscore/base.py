@@ -8,7 +8,7 @@ from aiohttp import ClientSession
 
 class Base:
     def __init__(self):
-        self._main_url = 'https://flashscore.com/'
+        self._main_url = 'https://www.flashscore.com/'
         self._headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',
             'Accept': '*/*',
@@ -28,16 +28,24 @@ class Base:
         return requests.get(url, headers=self._headers) 
 
     def make_grequest(self, urls: List[str]) -> List[requests.models.Response]:
-        return grequests.map([
+        result = grequests.map([
             grequests.get(url, headers=self._headers)
             for url in urls
-        ]) 
+        ], gtimeout=20) 
+        
+        if None in result:
+            return self.make_grequest(urls)
+        return result
 
     async def async_requests(self, urls: List[str]) -> List[str]:
         async def async_request(url: str) -> str:
             async with ClientSession() as session:
-                async with session.get(url, headers=self._headers) as response:
-                    return await response.text()
+                try:
+                    async with session.get(url, headers=self._headers, timeout=20) as response:
+                        return await response.text()
+                except asyncio.TimeoutError:
+                    async with session.get(url, headers=self._headers, timeout=20) as response:
+                        return await response.text()
 
         tasks_result = []
         async with asyncio.TaskGroup() as tg:

@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, Optional
 
 from . import converter
 from .base import Base
@@ -13,7 +13,7 @@ class FlashscoreApi(Base):
         
         self._league_url = 'https://www.flashscore.com/x/req/m_1_'
         self._matches_url = 'https://local-global.flashscore.ninja/2/x/feed/tr_{endpoint}_{season}_{page}_3_en_1'
-        self._today_matches_url = 'https://local-global.flashscore.ninja/2/x/feed/f_1_0_3_en_1'
+        self._today_matches_url = 'https://local-global.flashscore.ninja/2/x/feed/f_1_{day}_3_en_1'
     
     def get_countries(self) -> List[Country]:
         response = self.make_request(self._main_url)
@@ -33,11 +33,39 @@ class FlashscoreApi(Base):
                 
         return sorted(countries, key=lambda country: country.id)
 
-    def get_today_matches(self) -> List[Match]:
-        today_matches_gzip = self.make_request(self._today_matches_url)
+    def get_today_matches(self, day: Optional[int] = 0) -> List[Match]:
+        today_matches_gzip = self.make_request(self._today_matches_url.replace('{day}', str(day)))
         today_matches_json = converter.gzip_to_json(today_matches_gzip.text)
         return [
             Match(id=today_match['AA'])
             for today_match in today_matches_json
             if today_match.get('AA') is not None
         ]
+
+    def get_live_matches(self) -> List[Match]:
+        today_matches_gzip = self.make_request(self._today_matches_url.replace('{day}', '0'))
+        today_matches_json = converter.gzip_to_json(today_matches_gzip.text)
+
+        return [
+            Match(id=today_match['AA'])
+            for today_match in today_matches_json
+            if today_match.get('AA') is not None\
+            and today_match.get('AB') == '2'
+        ]
+    
+    def get_matches_with_already_loaded_content(self, matches_ids: List[str]) -> List[Match]:
+        matches = [ Match(id=id) for id in matches_ids ]
+        urls = []
+        for match in matches:
+            urls += [
+                match._flashscore_url, 
+                match._general_url,
+                match._stats_url,
+                match._events_url,
+                match._odds_url,
+                match._head2heads_url,
+            ]
+        
+        for match, responses in zip(matches, self.split_list_to_chinks(self.make_grequest(urls), 6)):
+            match.load_content(*[response.text for response in responses]) 
+        return matches
