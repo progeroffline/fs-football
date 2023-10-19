@@ -1,5 +1,5 @@
 import asyncio
-from typing import List
+from typing import List, Optional
 
 import grequests
 import requests
@@ -7,8 +7,30 @@ from aiohttp import ClientSession
 
 
 class Base:
-    def __init__(self):
-        self._main_url = 'https://www.flashscore.com/'
+    def __init__(self, locale: str = 'en'):
+        self._locale_codes = {
+            'en': '2',
+            'ua': '35',
+        }
+        self._locale_code = self._locale_codes[locale]
+        if locale == 'ua':
+            self._main_url = 'https://www.flashscore.ua/'
+        else:
+            self._main_url = 'https://www.flashscore.com/'
+            
+        self._league_url = f'https://www.flashscore.com/{self._locale_code}/req/m_1_'
+        self._matches_url = 'https://local-global.flashscore.ninja/' + self._locale_code + '/x/feed/tr_{endpoint}_{season}_{page}_3_en_1'
+        self._today_matches_url = 'https://local-global.flashscore.ninja/' + self._locale_code + '/x/feed/f_1_{day}_3_en_1'
+        self._league_url = f'https://www.flashscore.com/{self._locale_code}/req/m_1_'
+        
+        self._flashscore_endpoint: str = f"{self._main_url}match/"
+        self._general_endpoint: str = f'https://local-global.flashscore.ninja/{self._locale_code}/x/feed/dc_1_'
+        self._stats_endpoint: str = f'https://local-global.flashscore.ninja/{self._locale_code}/x/feed/df_st_1_'
+        self._events_endpoint: str = f'https://local-global.flashscore.ninja/{self._locale_code}/x/feed/df_sui_1_'
+        self._odds_endpoint: str = f'https://2.ds.lsapp.eu/pq_graphql'
+        self._head2heads_endpoint: str = f'https://local-global.flashscore.ninja/{self._locale_code}/x/feed/df_hh_1_'
+        self._matches_url = f'https://local-global.flashscore.ninja/{self._locale_code}/x/feed/'
+            
         self._headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',
             'Accept': '*/*',

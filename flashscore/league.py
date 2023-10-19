@@ -1,3 +1,4 @@
+from typing import Optional
 from .base import Base
 from .season import Season
 
@@ -9,8 +10,10 @@ class League(Base):
                  url: str,
                  country_id: int,
                  country_name: str,
-                 api_endpoint: str):
-        super().__init__()
+                 api_endpoint: str,
+                 locale: Optional[str] = 'en'):
+        self.locale = locale
+        super().__init__(self.locale)
         
         self.id = id
         self.name = name

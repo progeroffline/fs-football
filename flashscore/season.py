@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from . import converter
 from .base import Base
@@ -12,8 +12,10 @@ class Season(Base):
                  country_id: int,
                  league_id: str,
                  country_name: str,
-                 league_name: str):
-        super().__init__()
+                 league_name: str,
+                 locale: Optional[str] = 'en'):
+        self.locale = locale
+        super().__init__(self.locale)
         
         self.id = id
         self.title = title
@@ -22,7 +24,6 @@ class Season(Base):
         self.country_name = country_name
         self.league_name = league_name
         
-        self._matches_url = 'https://local-global.flashscore.ninja/2/x/feed/'
         self._matches_url += f'tr_1_{self.country_id}_{self.league_id}_{self.id}_0_3_en_1'
         
     def __repr__(self) -> str:
