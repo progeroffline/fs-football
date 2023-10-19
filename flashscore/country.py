@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from flashscore import converter
 
@@ -7,15 +7,14 @@ from .league import League
 
 
 class Country(Base):
-    def __init__(self, id: int, name: str, url: str):
-        super().__init__()
+    def __init__(self, id: int, name: str, url: str, locale: Optional[str] = 'en'):
+        self.locale = locale
+        super().__init__(self.locale)
         
         self.id = id
         self.name = name
         self.url = url
         self.leagues: List[League] = []
-        
-        self._league_url = 'https://www.flashscore.com/x/req/m_1_'
 
     def __repr__(self) -> str:
         return "%s(id=%s, name='%s', url='%s')" % (

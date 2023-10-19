@@ -8,12 +8,9 @@ from .match import Match
 
 
 class FlashscoreApi(Base):
-    def __init__(self):
-        super().__init__()
-        
-        self._league_url = 'https://www.flashscore.com/x/req/m_1_'
-        self._matches_url = 'https://local-global.flashscore.ninja/2/x/feed/tr_{endpoint}_{season}_{page}_3_en_1'
-        self._today_matches_url = 'https://local-global.flashscore.ninja/2/x/feed/f_1_{day}_3_en_1'
+    def __init__(self, locale: Optional[str] = 'en'):
+        self.locale = locale
+        super().__init__(self.locale)
     
     def get_countries(self) -> List[Country]:
         response = self.make_request(self._main_url)
@@ -37,7 +34,7 @@ class FlashscoreApi(Base):
         today_matches_gzip = self.make_request(self._today_matches_url.replace('{day}', str(day)))
         today_matches_json = converter.gzip_to_json(today_matches_gzip.text)
         return [
-            Match(id=today_match['AA'])
+            Match(id=today_match['AA'], locale=self.locale)
             for today_match in today_matches_json
             if today_match.get('AA') is not None
         ]
@@ -47,14 +44,14 @@ class FlashscoreApi(Base):
         today_matches_json = converter.gzip_to_json(today_matches_gzip.text)
 
         return [
-            Match(id=today_match['AA'])
+            Match(id=today_match['AA'], locale=self.locale)
             for today_match in today_matches_json
             if today_match.get('AA') is not None\
             and today_match.get('AB') == '2'
         ]
     
     def get_matches_with_already_loaded_content(self, matches_ids: List[str]) -> List[Match]:
-        matches = [ Match(id=id) for id in matches_ids ]
+        matches = [ Match(id=id, locale=self.locale) for id in matches_ids ]
         urls = []
         for match in matches:
             urls += [

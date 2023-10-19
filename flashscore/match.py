@@ -49,8 +49,10 @@ class Match(Base):
     def __init__(self,
                  id: str,
                  country_name: Optional[str] = None,
-                 league_name: Optional[str] = None):
-        super().__init__()
+                 league_name: Optional[str] = None,
+                 locale: str = 'en'):
+        self._locale = locale
+        super().__init__(self._locale)
         
         self.id = id
         self.timestamp: Optional[int] = None
@@ -82,13 +84,6 @@ class Match(Base):
         self.away_matches: List[HistoryMatch] = [] 
         self.head2head_matches: List[HistoryMatch] = []
         
-        self._flashscore_endpoint: str = f"{self._main_url}match/"
-        self._general_endpoint: str = f'https://local-global.flashscore.ninja/2/x/feed/dc_1_'
-        self._stats_endpoint: str = f'https://local-global.flashscore.ninja/2/x/feed/df_st_1_'
-        self._events_endpoint: str = f'https://local-global.flashscore.ninja/2/x/feed/df_sui_1_'
-        self._odds_endpoint: str = f'https://2.ds.lsapp.eu/pq_graphql'
-        self._head2heads_endpoint: str = f'https://local-global.flashscore.ninja/2/x/feed/df_hh_1_'
-
         self._flashscore_url: str = f"{self._flashscore_endpoint}{self.id}"
         self._general_url: str = f'{self._general_endpoint}{self.id}'
         self._stats_url: str = f'{self._stats_endpoint}{self.id}'
