@@ -16,12 +16,12 @@ class Base:
             },
             'ua': {
                 'code': '35',
-                'url': 'https://www.flashscore.ua/',
+                'url': 'https://www.flashscore.com.ua/',
                 'ninja': 'https://local-ruua.flashscore.ninja/',
             },
             'ru': {
                 'code': '32',
-                'url': 'https://www.flashscore.ua/',
+                'url': 'https://www.flashscore.com.ua/',
                 'ninja': 'https://local-ruua.flashscore.ninja/',
             },
         }
