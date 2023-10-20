@@ -114,6 +114,7 @@ class Match(Base):
     def _load_names_content(self, names_content: str) -> None:
         index_start = names_content.find('window.environment = {') + len('window.environment =')
         index_end = index_start + names_content[index_start:].find('};') + 1
+
         json_data = json.loads(names_content[index_start:index_end])
         json_data = {
             'header': json_data['header'],
