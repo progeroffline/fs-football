@@ -8,7 +8,7 @@ from .match import Match
 
 
 class FlashscoreApi(Base):
-    def __init__(self, locale: Optional[str] = 'en'):
+    def __init__(self, locale: str = 'en'):
         self.locale = locale
         super().__init__(self.locale)
     
@@ -62,7 +62,6 @@ class FlashscoreApi(Base):
                 match._odds_url,
                 match._head2heads_url,
             ]
-        
         for match, responses in zip(matches, self.split_list_to_chinks(self.make_grequest(urls), 6)):
             match.load_content(*[response.text for response in responses]) 
         return matches
