@@ -11,9 +11,10 @@ class Base:
         self._locale_codes = {
             'en': '2',
             'ua': '35',
+            'ru': '32',
         }
         self._locale_code = self._locale_codes[locale]
-        if locale == 'ua':
+        if locale == 'ua' or locale == 'ru':
             self._main_url = 'https://www.flashscore.ua/'
         else:
             self._main_url = 'https://www.flashscore.com/'
@@ -34,10 +35,10 @@ class Base:
         self._headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',
             'Accept': '*/*',
-            'Accept-Language': 'en',
-            'Referer': 'https://www.flashscore.com/',
+            'Accept-Language': locale,
+            'Referer': self._main_url,
             'x-fsign': 'SW9D1eZo',
-            'Origin': 'https://www.flashscore.com',
+            'Origin': self._main_url,
             'Connection': 'keep-alive',
             'Sec-Fetch-Dest': 'empty',
             'Sec-Fetch-Mode': 'cors',
